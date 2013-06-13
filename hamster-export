@@ -270,7 +270,7 @@ class ActiveCollab(Profile):
 
     def process(self, timesheet, **kwargs):
         timesheet = self.filter_timesheet(timesheet)
-        timesheet = ActiveCollab.edit_timesheet(timesheet)
+        timesheet = ActiveCollab.edit_timesheet(timesheet, **kwargs)
         timesheet.check_activities(self._activities.values())
 
         total = len(timesheet.entries)
@@ -456,5 +456,5 @@ if __name__ == "__main__":
     if args.short or config.get(profile_section, 'short'):
         timesheet.shorten()
 
-    profile.process(timesheet)
 
+    profile.process(timesheet, editor=config.get(profile_section, 'editor'))
