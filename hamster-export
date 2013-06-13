@@ -285,28 +285,22 @@ class ActiveCollab(Profile):
         project = activity.get('project')
         query = {
             'submitted': 'submitted',
-            'time[body]': entry.description,
-            'time[user_id]': self.user_id,
-            'time[value]': entry.repr_duration(),
-            'time[record_date]': entry.datetime.strftime('%Y-%m-%d'),
-            'time[billable_status]': 1,
+            'time_record[summary]': entry.description,
+            'time_record[user_id]': self.user_id,
+            'time_record[value]': entry.repr_duration(),
+            'time_record[record_date]': entry.datetime.strftime('%Y-%m-%d'),
+            'time_record[billable_status]': 1,
+            'time_record[job_type_id]': 1, #FIXME needs to add to configuration
+                                           # info/job-types
         }
+        path = '/projects/{}'.format(project)
         if entry.ticket.strip():
-            ticket_id = self.fetch_ticket_id(project, entry.ticket.strip())
-            query['time[parent_id]'] = ticket_id
-
-        path = '/projects/{}/time/add'.format(project)
+            path += '/tasks/{}'.format(entry.ticket.strip())
+        path += '/tracking/time/add'
         result = self.send(path, query)
 
-    def fetch_ticket_id(self, project, ticket):
-        path = '/projects/{}/tickets/{}'.format(project, ticket)
-        data = self.send(path)
-        root = xml.dom.minidom.parseString(data)
-        ticket_id = root.getElementsByTagName('id')[0].firstChild.data
-        return ticket_id
-
     def send(self, path, query=None):
-        url = '{domain}/api.php?path_info={path}&token={api_key}'.format(
+        url = '{domain}/api.php?path_info={path}&auth_api_token={api_key}'.format(
                             domain=self.url, path=path, api_key=self.api_key)
         if not query:
             url += '&format=xml'
