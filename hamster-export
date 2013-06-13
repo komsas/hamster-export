@@ -325,20 +325,21 @@ class ActiveCollab(Profile):
             sys.exit(0)
 
 
-def load_profile(config_files, profile_name, activities):
-    config = ConfigParser.SafeConfigParser()
-    config.read(config_files)
-
+def get_profile_section(config, profile_name):
     section = 'profile "{}"'.format(profile_name)
     if not config.has_section(section):
         exit('No such profile:', profile_name)
+    return section
+
+
+def load_profile(config, profile_section, profile_name, activities):
     profile = None
-    if config.get(section, 'format') == 'activecollab':
-        profile = ActiveCollab(profile_name, config.get(section, 'url'),
-                               config.get(section, 'api_key'),
-                               dict(config.items(section)))
+    if config.get(profile_section, 'format') == 'activecollab':
+        profile = ActiveCollab(profile_name, config.get(profile_section, 'url'),
+                               config.get(profile_section, 'api_key'),
+                               dict(config.items(profile_section)))
     else:
-        exit('Not supported format:', config.get(section, 'format'))
+        exit('Not supported format:', config.get(profile_section, 'format'))
 
     for activity in activities:
         if activity.get('profile') == profile_name:
@@ -347,15 +348,12 @@ def load_profile(config_files, profile_name, activities):
     return profile
 
 
-def load_activities(config_files):
+def load_activities(config):
     def parse_activities(config):
         for section in config.sections():
             m = re.match('^activity "(.+)"$', section)
             if m is not None:
                 yield Activity(m.group(1), dict(config.items(section)))
-
-    config = ConfigParser.SafeConfigParser()
-    config.read(config_files)
     return list(parse_activities(config))
 
 
@@ -442,8 +440,12 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     config_files = [os.path.expanduser('~/.hamster-export')]
-    activities = load_activities(config_files)
-    profile = load_profile(config_files, args.profile, activities)
+    config = ConfigParser.SafeConfigParser()
+    config.read(config_files)
+
+    activities = load_activities(config)
+    profile_section = get_profile_section(config, args.profile)
+    profile = load_profile(config, profile_section, args.profile, activities)
 
     from_, till = parse_date_range(args.date, args.till)
     storage = Storage()
@@ -451,7 +453,7 @@ if __name__ == "__main__":
     timesheet.check_activities(activities)
 
     timesheet.round_up(parse_round(args.round))
-    if args.short:
+    if args.short or config.get(profile_section, 'short'):
         timesheet.shorten()
 
     profile.process(timesheet)
