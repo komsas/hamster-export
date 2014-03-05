@@ -30,7 +30,7 @@ Usage
       --short        merge similar time entries
       --round ROUND  round up the duration of time entries
 
-* date - support 'today' or month name from 3 letter and day conjuction e.g. jun10, may1, dec40
+* date - support 'today' or month name from 3 letter and day conjuction e.g. jun10, may1, dec4
 * round - todo
 
 Configuration file
